@@ -272,7 +272,7 @@ RUN cp pyproject.toml.cu12 pyproject.toml && \
 
 WORKDIR /opt
 ARG GIT_USERNAME=namehta4
-ARG GIT_PASSWORD=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
+ARG GIT_PASSWORD="input your github password here"
 RUN git clone https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/rr637/QC-AFQMC.git
 RUN pip install -e /opt/QC-AFQMC/SC_Tutorial/ipie
 
