@@ -1,0 +1,163 @@
+LAMMPS (22 Jul 2025 - Update 3)
+KOKKOS mode with Kokkos version 4.6.2 is enabled
+  will use up to 4 GPU(s) per node
+WARNING: When using a single thread, the Kokkos Serial backend (i.e. Makefile.kokkos_mpi_only) gives better performance than the OpenMP backend (src/KOKKOS/kokkos.cpp:221)
+  using 1 OpenMP thread(s) per MPI task
+package kokkos
+package kokkos newton off neigh half
+# Rhodopsin model
+
+units           real
+neigh_modify    delay 5 every 1
+#comm_modify     mode single
+
+atom_style      full
+bond_style      harmonic
+angle_style     charmm
+dihedral_style  charmm
+improper_style  harmonic
+pair_style      lj/charmm/coul/long 8.0 10.0 9.0
+pair_modify     mix arithmetic
+kspace_style    pppm/kk 1e-4
+
+read_data       data.rhodo
+Reading data file ...
+  orthogonal box = (-27.5 -38.5 -36.3646) to (27.5 38.5 36.3615)
+  2 by 2 by 2 MPI processor grid
+  reading atoms ...
+  32000 atoms
+  reading velocities ...
+  32000 velocities
+  scanning bonds ...
+  4 = max bonds/atom
+  scanning angles ...
+  18 = max angles/atom
+  scanning dihedrals ...
+  40 = max dihedrals/atom
+  scanning impropers ...
+  4 = max impropers/atom
+  orthogonal box = (-27.5 -38.5 -36.3646) to (27.5 38.5 36.3615)
+  2 by 2 by 2 MPI processor grid
+  reading bonds ...
+  27723 bonds
+  reading angles ...
+  40467 angles
+  reading dihedrals ...
+  56829 dihedrals
+  reading impropers ...
+  1034 impropers
+Finding 1-2 1-3 1-4 neighbors ...
+  special bond factors lj:    0        0        0       
+  special bond factors coul:  0        0        0       
+     4 = max # of 1-2 neighbors
+    12 = max # of 1-3 neighbors
+    24 = max # of 1-4 neighbors
+    26 = max # of special neighbors
+  special bonds CPU = 0.863 seconds
+  read_data CPU = 25.336 seconds
+replicate       7 5 5
+Replication is creating a 7x5x5 = 175 times larger system...
+  orthogonal box = (-27.5 -38.5 -36.3646) to (357.5 346.5 327.2659)
+  2 by 2 by 2 MPI processor grid
+  5600000 atoms
+  4851525 bonds
+  7081725 angles
+  9945075 dihedrals
+  180950 impropers
+Finding 1-2 1-3 1-4 neighbors ...
+  special bond factors lj:    0        0        0       
+  special bond factors coul:  0        0        0       
+     4 = max # of 1-2 neighbors
+    12 = max # of 1-3 neighbors
+    24 = max # of 1-4 neighbors
+    26 = max # of special neighbors
+  special bonds CPU = 19.425 seconds
+  replicate CPU = 25.144 seconds
+
+fix             1 all shake 0.0001 5 0 m 1.0 a 232
+Finding SHAKE clusters ...
+  282975 = # of size 2 clusters
+  635775 = # of size 3 clusters
+  130725 = # of size 4 clusters
+  740775 = # of frozen angles
+  find clusters CPU = 6.811 seconds
+fix             2 all npt temp 300.0 300.0 100.0                 z 0.0 0.0 1000.0 mtk no pchain 0 tchain 1
+
+special_bonds   charmm
+
+thermo          50
+thermo_style    multi
+timestep        2.0
+
+run             100
+PPPM Kokkos initialization ...
+  using 12-bit tables for long-range coulomb
+  G vector (1/distance) = 0.27471729
+  grid = 180 180 180
+  stencil order = 5
+  estimated absolute RMS force accuracy = 0.040546033
+  estimated relative force accuracy = 0.00012210317
+  using double precision cuFFT
+  3d grid and FFT values/proc = 857375 729000
+Generated 2278 of 2278 mixed pair_coeff terms from arithmetic mixing rule
+Neighbor list info ...
+  update: every = 1 steps, delay = 5 steps, check = yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 12
+  ghost atom cutoff = 12
+  binsize = 12, bins = 33 33 31
+  1 neighbor lists, perpetual/occasional/extra = 1 0 0
+  (1) pair lj/charmm/coul/long/kk, perpetual
+      attributes: half, newton off, kokkos_device
+      pair build: half/bin/newtoff/kk/device
+      stencil: full/bin/3d
+      bin: kk/device
+Per MPI rank memory allocation (min/avg/max) = 2799 | 2799 | 2799 Mbytes
+------------ Step              0 ----- CPU =            0 (sec) -------------
+TotEng   =  -4438253.3207 KinEng   =   3752845.4747 Temp     =       299.0273 
+PotEng   =  -8191098.7954 E_bond   =    444148.9519 E_angle  =   1911240.4865 
+E_dihed  =    912062.6374 E_impro  =     37364.5275 E_vdwl   =   -403876.0977 
+E_coul   =  41130914.7720 E_long   = -52222954.0730 Press    =      -154.2321 
+Volume   =  53899130.8625
+------------ Step             50 ----- CPU =     54.82673 (sec) -------------
+TotEng   =  -4433450.1063 KinEng   =   3762648.8657 Temp     =       299.8085 
+PotEng   =  -8196098.9720 E_bond   =    432528.3868 E_angle  =   1896450.6929 
+E_dihed  =    916884.3216 E_impro  =     39762.8859 E_vdwl   =   -348488.8570 
+E_coul   =  41091254.4256 E_long   = -52224490.8278 Press    =       234.5950 
+Volume   =  53905301.3366
+------------ Step            100 ----- CPU =      109.824 (sec) -------------
+TotEng   =  -4425641.0827 KinEng   =   3779162.3568 Temp     =       301.1242 
+PotEng   =  -8204803.4394 E_bond   =    449377.8343 E_angle  =   1886939.0215 
+E_dihed  =    909900.8766 E_impro  =     37940.9038 E_vdwl   =   -330652.5919 
+E_coul   =  41065017.9184 E_long   = -52223327.4021 Press    =        16.9397 
+Volume   =  53922760.4984
+Loop time of 110.192 on 8 procs for 100 steps with 5600000 atoms
+
+Performance: 0.157 ns/day, 153.044 hours/ns, 0.908 timesteps/s, 5.082 Matom-step/s
+16.6% CPU use with 8 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 3.5004     | 3.6529     | 3.9072     |   7.6 |  3.32
+Bond    | 0.095415   | 0.11317    | 0.1387     |   3.6 |  0.10
+Kspace  | 57.137     | 58.19      | 58.856     |   7.8 | 52.81
+Neigh   | 3.5702     | 3.8227     | 4.0033     |   7.1 |  3.47
+Comm    | 3.1798     | 4.2044     | 5.0201     |  33.7 |  3.82
+Output  | 1.1918     | 2.0635     | 2.4064     |  34.7 |  1.87
+Modify  | 33.621     | 33.983     | 34.168     |   3.6 | 30.84
+Other   |            | 4.162      |            |       |  3.78
+
+Nlocal:         700000 ave      701847 max      698443 min
+Histogram: 1 1 1 0 3 0 0 0 0 2
+Nghost:         299940 ave      301456 max      298343 min
+Histogram: 1 0 0 2 1 1 1 0 1 1
+Neighs:    2.81221e+08 ave  2.8234e+08 max 2.80266e+08 min
+Histogram: 1 2 0 0 1 2 0 0 1 1
+
+Total # of neighbors = 2.2497659e+09
+Ave neighs/atom = 401.74391
+Ave special neighs/atom = 7.431875
+Neighbor list builds = 11
+Dangerous builds = 0
+Total wall time: 0:05:21
