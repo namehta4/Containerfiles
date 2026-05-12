@@ -1,4 +1,4 @@
-FROM nvcr.io/nvidia/cuda:13.1.1-cudnn-devel-ubuntu24.04
+FROM nvcr.io/nvidia/cuda:12.9.1-cudnn-devel-ubuntu24.04
 WORKDIR /opt
 ENV DEBIAN_FRONTEND noninteractive
 

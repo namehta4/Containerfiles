@@ -1,4 +1,4 @@
-FROM docker.io/nersc/base_gpu:26.03
+FROM docker.io/nersc/base_gpu:26.04
 WORKDIR /opt
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -11,6 +11,8 @@ RUN ln -sf /opt/basic/bin/pip /usr/local/bin/pip
 RUN pip install cuequivariance-ops-torch-cu12 cuequivariance-torch cuequivariance
 RUN pip install cupy-cuda12x
 RUN pip install cython setuptools pyfftw
+RUN pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
+RUN pip install mace-torch==0.3.14
 RUN pip install mpi4py -i https://pypi.anaconda.org/mpi4py/simple
 ENV PATH=$PATH:/opt/basic/bin
 ENV PYTHONPATH=$PYTHONPATH:/opt/basic/lib/python3.12/site-packages
@@ -67,7 +69,8 @@ RUN cmake -DCMAKE_INSTALL_PREFIX=$PWD/../install -D CMAKE_BUILD_TYPE=Release \
             -D PKG_SCFACOS=ON -D DOWNLOAD_SCAFACOS=yes \
             -D PKG_ML-QUIP=ON -D DOWNLOAD_QUIP=yes -D PKG_KIM=ON -D DOWNLOAD_KIM=yes -WITH_FFMPEG=yes \
             -D PKG_MACHDYN=ON -D DOWNLOAD_EIGEN3=yes -D PKG_LATTE=ON -D DOWNLOAD_LATTE=yes -D PKG_OPENMP=yes \
-            -D LAMMPS_SIZES=BIGBIG -D CMAKE_POSITION_INDEPENDENT_CODE=ON -D CMAKE_EXE_FLAGS="-dynamic" ../cmake
+            -D LAMMPS_SIZES=BIGBIG -D CMAKE_POSITION_INDEPENDENT_CODE=ON -D CMAKE_EXE_FLAGS="-dynamic" \
+            -D FFT=FFTW3 -D FFT_PACK=array -D FFT_KOKKOS=CUFFT ../cmake
 RUN make -j 4
 RUN make install
 WORKDIR /opt/lammps/python
@@ -83,3 +86,4 @@ ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/lammps/install/lib
 ENV PATH=/opt/lammps/build/kim_build-prefix/bin:$PATH
 ENV PATH=/opt/lammps/build/kim_build-prefix/include:$PATH
 ENV LD_LIBRARY_PATH=/opt/lammps/build/kim_build-prefix/lib:$LD_LIBRARY_PATH
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/basic/lib/python3.12/site-packages/torch/lib
