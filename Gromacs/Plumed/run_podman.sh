@@ -30,6 +30,7 @@ LD_PATH="/usr/lib64"
 LD_PATH="${LD_PATH}:/usr/local/cuda/lib64:/usr/local/cuda/compat"
 LD_PATH="${LD_PATH}:/opt/gromacs/lib"
 LD_PATH="${LD_PATH}:/opt/plumed/lib"
+LD_PATH="${LD_PATH}:/opt/libtorch/lib"
 
 PODMAN_ARGS="--rm \
   -e SLURM_* -e PALS_* -e PMI_* \
