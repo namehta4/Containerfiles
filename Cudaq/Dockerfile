@@ -1,4 +1,4 @@
-FROM docker.io/nersc/base_gpu:26.04
+FROM docker.io/nersc/base_gpu:26.06
 WORKDIR /opt
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -271,10 +271,7 @@ RUN cp pyproject.toml.cu12 pyproject.toml && \
 # Note: targets/*.yml are already installed by the pip wheel at site-packages/targets/
 
 WORKDIR /opt
-ARG GIT_USERNAME=namehta4
-ARG GIT_PASSWORD="input your github password here"
-RUN git clone https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/rr637/QC-AFQMC.git
-RUN pip install -e /opt/QC-AFQMC/SC_Tutorial/ipie
+RUN git clone https://github.com/rr637/QC-AFQMC.git
 
 # Build and install cudaqx from source
 # CUDAQ cmake configs come from the pip wheel install location
@@ -318,3 +315,5 @@ RUN find /opt/basic/lib/python3.12/site-packages/lib \
     find /opt/llvm/lib -name "*.so*" -type f \
          -exec strip --strip-debug {} \; 2>/dev/null || true && \
     rm -rf /root/.cache /tmp/* /var/tmp/*
+RUN pip install "ipie @ git+https://github.com/rr637/ipie.git@develop"
+RUN pip install --upgrade "jax[cuda12]"
