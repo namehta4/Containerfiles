@@ -2,7 +2,22 @@ FROM nvcr.io/nvidia/cuda:12.9.1-cudnn-devel-ubuntu24.04
 WORKDIR /opt
 ENV DEBIAN_FRONTEND noninteractive
 
-RUN apt-get update 
+# TARGETARCH is populated automatically by podman/buildah (and docker buildx)
+# from --platform: "amd64" on Perlmutter-class x86_64 hosts, "arm64" on
+# Grace/Grace-Hopper hosts (e.g. TACC Vista). The CUDA toolkit installs its
+# per-arch libs under a differently-named "targets/<arch>-linux" directory
+# (x86_64-linux vs sbsa-linux) — alias it to one stable path so the rest of
+# this file doesn't need to branch on arch again.
+ARG TARGETARCH
+RUN set -eu; \
+    case "${TARGETARCH}" in \
+      amd64) arch_dir=x86_64-linux ;; \
+      arm64) arch_dir=sbsa-linux ;; \
+      *) echo "Unsupported TARGETARCH=${TARGETARCH}" >&2; exit 1 ;; \
+    esac; \
+    ln -s "/usr/local/cuda/targets/${arch_dir}" /usr/local/cuda/targets/this-arch
+
+RUN apt-get update
 RUN apt-get install -y \
         build-essential ca-certificates pkg-config automake autoconf libtool  \ 
         cmake gdb strace wget git bzip2 python3 python3-pip python3-venv      \
@@ -62,11 +77,15 @@ RUN git clone --branch ${libcxi_version} --depth 1 https://github.com/HewlettPac
     && rm -r shs-libcxi
 
 # Install libfabric
+# Build in both the "cxi" provider (HPE Slingshot-11, used on Perlmutter) and
+# the "verbs" provider (InfiniBand, used on TACC Vista's Grace-Hopper nodes)
+# so the same binary works on either fabric — libfabric picks the matching
+# provider for the hardware it finds on the host at runtime.
 ARG libfabric_version=2.1.0
 RUN git clone --branch v${libfabric_version} --depth 1 https://github.com/ofiwg/libfabric.git \
     && cd libfabric \
     && ./autogen.sh \
-    && ./configure --prefix=/usr --with-cuda=/usr/local/cuda --enable-cuda-dlopen --enable-gdrcopy-dlopen --enable-xpmem=/usr --enable-cxi --enable-lnx --enable-efa \
+    && ./configure --prefix=/usr --with-cuda=/usr/local/cuda --enable-cuda-dlopen --enable-gdrcopy-dlopen --enable-xpmem=/usr --enable-cxi --enable-verbs --enable-lnx --enable-efa \
     && make -j$(nproc) \
     && make install \
     && ldconfig \
@@ -96,8 +115,8 @@ RUN wget -q https://www.mpich.org/static/downloads/${MPI_VER}/mpich-${MPI_VER}.t
        --enable-fortran --disable-cxx \
        --with-device=ch4:ofi --with-libfabric=/usr \
        --with-cuda=/usr/local/cuda \
-       CFLAGS="-L/usr/local/cuda/targets/sbsa-linux/lib/stubs/ -lcuda" \
-       CXXFLAGS="-L/usr/local/cuda/targets/sbsa-linux/lib/stubs/ -lcuda" \
+       CFLAGS="-L/usr/local/cuda/targets/this-arch/lib/stubs/ -lcuda" \
+       CXXFLAGS="-L/usr/local/cuda/targets/this-arch/lib/stubs/ -lcuda" \
     && make -j$(nproc) \
     && make install \
     && ldconfig \
@@ -123,9 +142,9 @@ ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/fftw/install/lib
 
 ENV PATH=$PATH:/usr/local/cuda/lib64/stubs
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64/stubs
-ENV PATH=$PATH:/usr/local/cuda/targets/x86_64-linux/lib/stubs
-ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/compat/:/usr/local/cuda/targets/x86_64-linux/lib/stubs
-RUN ln -s /usr/local/cuda/targets/x86_64-linux/lib/stubs/libnvidia-ml.so /usr/local/cuda/targets/x86_64-linux/lib/stubs/libnvidia-ml.so.1 
+ENV PATH=$PATH:/usr/local/cuda/targets/this-arch/lib/stubs
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/compat/:/usr/local/cuda/targets/this-arch/lib/stubs
+RUN ln -s /usr/local/cuda/targets/this-arch/lib/stubs/libnvidia-ml.so /usr/local/cuda/targets/this-arch/lib/stubs/libnvidia-ml.so.1
 
 #Install HDF5
 WORKDIR /opt
