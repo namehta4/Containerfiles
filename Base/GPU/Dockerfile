@@ -176,7 +176,7 @@ RUN cd hdf5                                                                 && \
           -DCMAKE_BUILD_TYPE:STRING=Release -DBUILD_SHARED_LIBS:BOOL=ON \
           -DBUILD_TESTING:BOOL=ON -DHDF5_BUILD_TOOLS:BOOL=ON -DHDF5_BUILD_FORTRAN:BOOL=ON \
           -DHDF5_ENABLE_PARALLEL=ON -D CMAKE_INSTALL_PREFIX=/opt/hdf5/install ../ && \
-    cmake --build . --config Release                                        && \
+    cmake --build . --config Release --parallel $(nproc)                    && \
 #    ctest -C Release                                                        && \
     cpack -C Release CPackConfig.cmake                                      && \
     make -j 4                                                               && \
