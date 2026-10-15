@@ -140,9 +140,9 @@ ENV ZLIB_INSTALL_PREFIX=/usr/local/zlib
 RUN ZLIB_VERSION=1.3.1 && \
     wget https://github.com/madler/zlib/releases/download/v${ZLIB_VERSION}/zlib-${ZLIB_VERSION}.tar.gz && \
     tar xzf zlib-${ZLIB_VERSION}.tar.gz && cd zlib-${ZLIB_VERSION} && \
-    CFLAGS="-fPIC" ./configure --prefix=${ZLIB_INSTALL_PREFIX} --static && make && make install && \
+    CFLAGS="-fPIC" ./configure --prefix=${ZLIB_INSTALL_PREFIX} --static && make -j$(nproc) && make install && \
     cd contrib/minizip && autoreconf --install && \
-    CFLAGS="-fPIC" ./configure --prefix=${ZLIB_INSTALL_PREFIX} --disable-shared && make && make install && \
+    CFLAGS="-fPIC" ./configure --prefix=${ZLIB_INSTALL_PREFIX} --disable-shared && make -j$(nproc) && make install && \
     cd /opt/cuda-quantum && rm -rf zlib-${ZLIB_VERSION} zlib-${ZLIB_VERSION}.tar.gz
 
 # LLVM (from git submodule) — main compiler infrastructure for cuda-quantum (~30-60 min build)
@@ -155,7 +155,7 @@ ENV BLAS_INSTALL_PREFIX=/usr/local/blas
 RUN BLAS_VERSION=3.11.0 && \
     wget http://www.netlib.org/blas/blas-${BLAS_VERSION}.tgz && \
     tar xzf blas-${BLAS_VERSION}.tgz && cd BLAS-3.11.0 && \
-    make FC=gfortran && \
+    make -j$(nproc) FC=gfortran && \
     mkdir -p ${BLAS_INSTALL_PREFIX} && mv blas_*.a ${BLAS_INSTALL_PREFIX}/libblas.a && \
     cd /opt/cuda-quantum && rm -rf BLAS-3.11.0 blas-${BLAS_VERSION}.tgz
 
@@ -166,7 +166,7 @@ RUN OPENSSL_VERSION=3.5.1 && PERL_VERSION=5.38.2 && \
     BUILDDIR=$(mktemp -d) && cd ${BUILDDIR} && \
     wget https://www.cpan.org/src/5.0/perl-${PERL_VERSION}.tar.gz && \
     tar xzf perl-${PERL_VERSION}.tar.gz && cd perl-${PERL_VERSION} && \
-    ./Configure -des -Dprefix=${BUILDDIR}/perl5 && make && make install && \
+    ./Configure -des -Dprefix=${BUILDDIR}/perl5 && make -j$(nproc) && make install && \
     cd ${BUILDDIR} && \
     wget https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz && \
     tar xf openssl-${OPENSSL_VERSION}.tar.gz && cd openssl-${OPENSSL_VERSION} && \
@@ -175,7 +175,7 @@ RUN OPENSSL_VERSION=3.5.1 && PERL_VERSION=5.38.2 && \
         --prefix=${OPENSSL_INSTALL_PREFIX} zlib \
         --with-zlib-include=${ZLIB_INSTALL_PREFIX}/include \
         --with-zlib-lib=${ZLIB_INSTALL_PREFIX}/lib && \
-    make && make install && \
+    make -j$(nproc) && make install_sw && \
     rm -rf ${BUILDDIR}
 
 # CURL 8.5.0 (static) — needed for communication with external services
