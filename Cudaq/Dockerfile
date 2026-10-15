@@ -1,4 +1,9 @@
-FROM docker.io/nersc/base_gpu:26.10
+# Default assumes base_gpu:26.10 is a pushed multi-arch manifest combining
+# 26.10-amd64 and 26.10-arm64. Until that manifest exists, override per
+# build host to match whatever you actually tagged the base image locally,
+# e.g.: --build-arg BASE_IMAGE=docker.io/nersc/base_gpu:26.10-amd64
+ARG BASE_IMAGE=docker.io/nersc/base_gpu:26.10
+FROM ${BASE_IMAGE}
 WORKDIR /opt
 ENV DEBIAN_FRONTEND=noninteractive
 
