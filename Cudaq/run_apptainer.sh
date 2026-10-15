@@ -3,8 +3,8 @@
 #SBATCH -A <allocation>      # Your Vista project/allocation
 #SBATCH -p gh                # gh-dev instead for short test runs (<=2h, <=8 nodes)
 #SBATCH -t 00:30:00
-#SBATCH -N 1                 # gh/gh-dev nodes have exactly 1 H200 GPU each — scale
-#SBATCH -n 1                 # via -N for multi-GPU/multi-node, not GPUs-per-node
+#SBATCH -N 1                 # gh/gh-dev nodes have exactly 1 GH200 120GB GPU each —
+#SBATCH -n 1                 # scale via -N for multi-GPU/multi-node, not GPUs-per-node
 #SBATCH -J cudaq
 # Do not request specific nodes (TACC policy on Vista).
 
@@ -20,8 +20,10 @@ export OMP_PLACES=threads
 # nodes; that's not what we want on Vista's NDR ConnectX-7 fabric.
 export FI_PROVIDER=verbs
 
-# Pull once on a login node (compute nodes typically have no internet
-# egress) and point this at the resulting .sif:
+# Pull once and point this at the resulting .sif. TACC blocks Apptainer on
+# Vista's login nodes, so the pull itself has to run under idev or sbatch
+# (a plain login-node login(1) shell won't work):
+#   idev -p gh-dev -N 1 -n 1 -m 30
 #   apptainer pull cudaq.sif docker://docker.io/nersc/cudaq:26.10
 IMAGE="$WORK/containers/cudaq.sif"
 
@@ -45,15 +47,17 @@ apptainer exec --nv \
     bash -c "$RUN_CMD"
 
 # For multi-node cudaq::mpi runs (e.g. distributed state-vector or AFQMC),
-# scale -N above and launch through ibrun so one apptainer invocation (and
-# one rank) is spawned per allocated host:
+# scale -N above and launch one apptainer invocation (one rank) per
+# allocated host. Use srun, NOT ibrun: checked on Vista, ibrun defaults to
+# MODE=openmpi_ssh (launching through the host's own OpenMPI mpirun) unless
+# a TACC MPI module is loaded, which would bypass Slurm PMI entirely — a
+# plain self-built MPICH container under that would likely come up as N
+# separate size-1 jobs rather than one N-rank job. Slurm offers pmi2/pmix
+# directly, which is what this image's MPICH (ch4:ofi) expects:
 #
-#   ibrun apptainer exec --nv --bind "$SCRATCH:$SCRATCH" --bind "$WORK:$WORK" \
-#       --pwd "$PWD" "$IMAGE" bash -c "$RUN_CMD"
+#   srun --mpi=pmi2 apptainer exec --nv --bind "$SCRATCH:$SCRATCH" \
+#       --bind "$WORK:$WORK" --pwd "$PWD" "$IMAGE" bash -c "$RUN_CMD"
 #
-# This is UNVERIFIED on Vista specifically — TACC's own docs show ibrun
-# launching multi-node apptainer+MPI jobs successfully in general, but that
-# depends on ibrun's process launch (PMI/PMIx) being compatible with
-# whatever MPI is actually built into the container. Confirm on a small
-# interactive allocation first (idev -p gh-dev -N 2 -n 2) before trusting
-# this for a real job.
+# Still UNVERIFIED on Vista — a 2-node idev test (idev -p gh-dev -N 2 -n 2)
+# was started but cancelled before it ran. Confirm this actually launches
+# as one job before trusting it for a real run.

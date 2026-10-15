@@ -125,14 +125,20 @@ RUN wget -q https://www.mpich.org/static/downloads/${MPI_VER}/mpich-${MPI_VER}.t
 
 
 #Install FFTW
+# --enable-sse2/avx/avx2 are x86-only SIMD flags and fail configure on arm64;
+# use --enable-neon there instead.
 WORKDIR /opt
 RUN wget https://fftw.org/pub/fftw/fftw-3.3.10.tar.gz                         && \
     tar -xvzf fftw-3.3.10.tar.gz                                              && \
     mv fftw-3.3.10 fftw                                                       && \
     cd /opt/fftw                                                              && \
+    case "${TARGETARCH}" in \
+      amd64) SIMD_FLAGS="--enable-sse2 --enable-avx --enable-avx2" ;; \
+      arm64) SIMD_FLAGS="--enable-neon" ;; \
+    esac && \
     ./configure --prefix=/opt/fftw/install MPICC=mpicc                           \
                 --enable-shared --enable-static --enable-mpi                     \
-                --enable-threads --enable-sse2 --enable-avx --enable-avx2     && \
+                --enable-threads ${SIMD_FLAGS}                                && \
     make -j 4                                                                 && \
     make install
 ENV PATH=$PATH:/opt/fftw/install/bin
