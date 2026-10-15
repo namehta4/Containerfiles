@@ -349,6 +349,31 @@ RUN cmake -G Ninja -S /opt/cudaqx -B /opt/cudaqx/build \
 RUN patchelf --add-needed libcudaq-em-default.so \
         /opt/nvidia/cudaqx/lib/libcudaq-qec.so
 
+# The nv-qldpc-decoder (GPU BP-OSD) plugin is closed source — it ships only as
+# a binary inside NVIDIA's cudaq-qec-cu12 wheel, so the source build above
+# never produces it (and e.g. the SC25 tutorial's Hour3 decoding example hard-
+# fails without it). Lift it out of the matching 0.8.1 wheel into the plugin
+# dir decoder.cpp scans (<dir of libcudaq-qec-decoders.so>/decoder-plugins).
+# Its only cudaq dependency is libcudaq-qec-decoders.so via RUNPATH $ORIGIN/..,
+# which the source build above provides at the same release.
+RUN nv_arch=$(cat /tmp/nv_arch) && \
+    case "${nv_arch}" in \
+      x86_64) whl_arch=x86_64;  EXPECTED_SHA256=bdc613cf7fb11f74c30bc3c4c04ec7ce91079be95770187c53e6ec6ee2e3af9d ;; \
+      sbsa)   whl_arch=aarch64; EXPECTED_SHA256=dd5814cb0cb0ecfc135c751186617231158b56cc7d96b4a763b6f6f010604f88 ;; \
+    esac && \
+    BUILDDIR=$(mktemp -d) && cd ${BUILDDIR} && \
+    pip download --no-deps --only-binary=:all: --python-version 3.12 \
+        --platform manylinux_2_28_${whl_arch} cudaq-qec-cu12==0.8.1 && \
+    whl=$(ls cudaq_qec_cu12-0.8.1-cp312-*.whl) && \
+    computed=$(sha256sum ${whl} | awk '{print $1}') && \
+    [ "$computed" = "$EXPECTED_SHA256" ] || (echo "SHA256 mismatch for cudaq-qec wheel!" && exit 1) && \
+    python3 -m zipfile -e ${whl} wheel && \
+    mkdir -p /opt/nvidia/cudaqx/lib/decoder-plugins && \
+    install -m 755 wheel/cudaq_qec/lib/decoder-plugins/libcudaq-qec-nv-qldpc-decoder.so \
+        /opt/nvidia/cudaqx/lib/decoder-plugins/ && \
+    if ldd /opt/nvidia/cudaqx/lib/decoder-plugins/libcudaq-qec-nv-qldpc-decoder.so | grep 'not found'; then exit 1; fi && \
+    cd / && rm -rf ${BUILDDIR}
+
 ENV PYTHONPATH=${CUDAQX_INSTALL_PREFIX}:${CUDAQX_INSTALL_PREFIX}/lib/python3.12/site-packages:$PYTHONPATH
 ENV PATH=${CUDAQX_INSTALL_PREFIX}/bin:$PATH
 
