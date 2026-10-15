@@ -1,4 +1,4 @@
-FROM docker.io/nersc/base_gpu:26.06
+FROM docker.io/nersc/base_gpu:26.10
 WORKDIR /opt
 ENV DEBIAN_FRONTEND=noninteractive
 
