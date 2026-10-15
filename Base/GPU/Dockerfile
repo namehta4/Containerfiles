@@ -93,19 +93,28 @@ RUN git clone --branch v${libfabric_version} --depth 1 https://github.com/ofiwg/
     && rm -rf libfabric
 
 # Install UCX
+# UCX is MPICH's netmod on InfiniBand systems (TACC Vista) — see the MPICH
+# step below. Request verbs/rdmacm/xpmem explicitly so configure fails loudly
+# instead of silently building a UCX without the IB or XPMEM transports.
 ARG UCX_VERSION=1.20.0
 RUN wget -q https://github.com/openucx/ucx/releases/download/v${UCX_VERSION}/ucx-${UCX_VERSION}.tar.gz \
     && tar xzf ucx-${UCX_VERSION}.tar.gz \
     && cd ucx-${UCX_VERSION} \
     && mkdir build \
     && cd build \
-    && ../configure --prefix=/usr --with-cuda=/usr/local/cuda --with-gdrcopy=/usr/local --enable-mt --enable-devel-headers \
+    && ../configure --prefix=/usr --with-cuda=/usr/local/cuda --with-gdrcopy=/usr/local \
+       --with-verbs --with-rdmacm --with-xpmem=/usr --enable-mt --enable-devel-headers \
     && make -j$(nproc) \
     && make install \
     && cd ../.. \
     && rm -rf ucx-${UCX_VERSION}.tar.gz ucx-${UCX_VERSION}
 
 # Install mpich
+# Build both ch4 netmods and pick one at launch with MPIR_CVAR_CH4_NETMOD:
+#   ofi (default, first in the list) -> libfabric cxi on Slingshot (Perlmutter)
+#   ucx                              -> UCX over InfiniBand (TACC Vista)
+# so one image runs at full speed on either fabric. XPMEM adds the
+# single-copy intra-node path (/dev/xpmem is present on both systems).
 ARG MPI_VER=5.0.1
 RUN wget -q https://www.mpich.org/static/downloads/${MPI_VER}/mpich-${MPI_VER}.tar.gz \
     && tar xf mpich-${MPI_VER}.tar.gz \
@@ -113,13 +122,15 @@ RUN wget -q https://www.mpich.org/static/downloads/${MPI_VER}/mpich-${MPI_VER}.t
     && ./autogen.sh \
     && ./configure --prefix=/usr --enable-fast=O3,ndebug \
        --enable-fortran --disable-cxx \
-       --with-device=ch4:ofi --with-libfabric=/usr \
+       --with-device=ch4:ofi,ucx --with-libfabric=/usr --with-ucx=/usr \
+       --with-xpmem=/usr \
        --with-cuda=/usr/local/cuda \
        CFLAGS="-L/usr/local/cuda/targets/this-arch/lib/stubs/ -lcuda" \
        CXXFLAGS="-L/usr/local/cuda/targets/this-arch/lib/stubs/ -lcuda" \
     && make -j$(nproc) \
     && make install \
     && ldconfig \
+    && mpichversion | grep -i device \
     && cd .. \
     && rm -rf mpich-${MPI_VER}.tar.gz mpich-${MPI_VER}
 

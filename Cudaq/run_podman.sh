@@ -21,6 +21,12 @@ export SLURM_CPU_BIND=cores
 export CRAY_ACCEL_TARGET=nvidia80
 export SUPPRESS_NVIDIA_HEADER=1
 
+# Base/GPU/Dockerfile builds MPICH with two netmods (ofi, ucx). On Slingshot
+# use ofi with libfabric's cxi provider. ofi is already MPICH's default here,
+# but set it explicitly so a stray MPIR_CVAR_CH4_NETMOD can't override it.
+export MPIR_CVAR_CH4_NETMOD=ofi
+export FI_PROVIDER=cxi
+
 IMAGE="docker://docker.io/nersc/cudaq:26.10"   # set to whatever tag you push
 
 # What to run inside the container. Defaults to the SC25 tutorial's Hour3
@@ -49,6 +55,7 @@ PODMAN_ARGS="--rm \
   -v /usr/lib64:/usr/local/nvidia/lib64 \
   -v /usr/bin/nvidia-smi:/usr/bin/nvidia-smi \
   -e MPICH_GPU_SUPPORT_ENABLED=1 \
+  -e MPIR_CVAR_CH4_NETMOD -e FI_PROVIDER \
   -e SUPPRESS_NVIDIA_HEADER \
   -e OMP_NUM_THREADS -e OMP_PROC_BIND -e OMP_PLACES \
   -v $SCRATCH:$SCRATCH -w $PWD"
