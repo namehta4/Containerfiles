@@ -24,7 +24,7 @@ RUN apt-get install -y \
         python3-dev python-is-python3 build-essential gfortran rdma-core      \
         numactl libconfig-dev libuv1-dev libfuse-dev libfuse3-dev libyaml-dev \
         libnl-3-dev libnuma-dev libsensors-dev libcurl4-openssl-dev libjson-c-dev \
-        libibverbs-dev plocate vim libzip-dev \
+        libibverbs-dev librdmacm-dev plocate vim libzip-dev \
         --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
