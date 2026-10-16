@@ -46,7 +46,10 @@ RUN pip install --no-cache-dir \
     setuptools \
     pyfftw
 
-RUN pip install --no-cache-dir mpi4py -i https://pypi.anaconda.org/mpi4py/simple
+# Prefer mpi4py's prebuilt wheel index; if it is unreachable, build from PyPI
+# source against the base image's MPICH (mpicc is on PATH).
+RUN pip install --no-cache-dir mpi4py -i https://pypi.anaconda.org/mpi4py/simple \
+    || pip install --no-cache-dir mpi4py
 
 RUN pip install --no-cache-dir \
     pandas \
