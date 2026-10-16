@@ -115,6 +115,8 @@ RUN wget -q https://github.com/openucx/ucx/releases/download/v${UCX_VERSION}/ucx
 #   ucx                              -> UCX over InfiniBand (TACC Vista)
 # so one image runs at full speed on either fabric. XPMEM adds the
 # single-copy intra-node path (/dev/xpmem is present on both systems).
+# The netmod check reads the configured device from mpichinfo.h rather than
+# running mpichversion, which needs the host driver's libcuda.so.1.
 ARG MPI_VER=5.0.1
 RUN wget -q https://www.mpich.org/static/downloads/${MPI_VER}/mpich-${MPI_VER}.tar.gz \
     && tar xf mpich-${MPI_VER}.tar.gz \
@@ -130,7 +132,7 @@ RUN wget -q https://www.mpich.org/static/downloads/${MPI_VER}/mpich-${MPI_VER}.t
     && make -j$(nproc) \
     && make install \
     && ldconfig \
-    && mpichversion | grep -i device \
+    && grep -E 'MPICH_DEVICE ".*ofi.*ucx' src/include/mpichinfo.h \
     && cd .. \
     && rm -rf mpich-${MPI_VER}.tar.gz mpich-${MPI_VER}
 
