@@ -335,6 +335,9 @@ RUN cp pyproject.toml.cu12 pyproject.toml && \
 RUN plugin=$(find /opt /usr -name 'libcudaq-comm-plugin*.so' 2>/dev/null | head -1); \
     if [ -n "$plugin" ]; then \
         echo "MPI comm plugin: $plugin"; ldd "$plugin" | grep -i mpi || true; \
+        if ldd "$plugin" | grep -q 'cuda_quantum_cu12.libs/libmpi'; then \
+            echo "ERROR: comm plugin links auditwheel's vendored libmpi, not the base image MPICH" >&2; exit 1; \
+        fi; \
     else \
         echo "WARNING: cudaq MPI comm plugin not found under /opt or /usr — check manually" >&2; \
     fi
