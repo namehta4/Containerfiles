@@ -217,6 +217,7 @@ RUN BUILDDIR=$(mktemp -d) && cd ${BUILDDIR} && \
     cmake -G Ninja .. \
         -DCMAKE_INSTALL_PREFIX=${AWS_INSTALL_PREFIX} \
         -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
         -DCMAKE_COMPILE_WARNING_AS_ERROR=OFF \
         -DAWS_SDK_WARNINGS_ARE_ERRORS=OFF \
         -DBUILD_ONLY="braket;s3-crt;sts" \
