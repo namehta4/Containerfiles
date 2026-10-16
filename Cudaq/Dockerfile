@@ -278,12 +278,15 @@ ENV CUTENSOR_INSTALL_PREFIX=/usr/local/cutensor
 #   - Disable warnings-as-errors (compiler version mismatch causes -Werror failures)
 #   - Enable verbose cmake output for better diagnostics
 #   - Relax cupy version pin (we have 14.x installed, pin is ~=13.6)
+#   - Point the hard-coded lld search path (-B/usr/local/llvm/bin) at our LLVM_INSTALL_PREFIX
 RUN sed -i \
     's/cmake\.verbose = false/cmake.verbose = true/' pyproject.toml.cu12 && \
     sed -i \
     's/"-DCUDAQ_ENABLE_PASQAL_QRMI_CONNECTOR=OFF"/"-DCUDAQ_ENABLE_PASQAL_QRMI_CONNECTOR=OFF",\n    "-DCMAKE_COMPILE_WARNING_AS_ERROR=OFF"/' pyproject.toml.cu12 && \
     sed -i \
-    "s/'cupy-cuda12x ~= 13.6.0;/'cupy-cuda12x >= 13.6.0;/" pyproject.toml.cu12
+    "s/'cupy-cuda12x ~= 13.6.0;/'cupy-cuda12x >= 13.6.0;/" pyproject.toml.cu12 && \
+    sed -i "s|-B/usr/local/llvm/bin|-B${LLVM_INSTALL_PREFIX}/bin|g" pyproject.toml.cu12 && \
+    ! grep -q '/usr/local/llvm' pyproject.toml.cu12
 
 # Build wheel, install it, then build nvq++ toolchain from the same _skbuild, then delete
 # all build artifacts in one layer so they don't persist in the image.
