@@ -304,9 +304,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends libgmp-dev libm
 # _skbuild is ~10-15 GB; keeping creation and deletion in one RUN avoids layer bloat.
 # -v: without it build_wheel.sh pipes the build through `tail -20`, hiding compiler errors.
 # mkdir: the 0.16 wheel no longer ships site-packages/bin; nvq++ still resolves ../lib from there.
+# Development: since 0.16 the CMake packages (lib/cmake/{cudaq,nvqir}) and headers are in the
+# Development install component, which the wheel leaves out; cudaq-qec's build needs them. Installed
+# from the wheel's own _skbuild before it is reconfigured for the tools below.
 RUN cp pyproject.toml.cu12 pyproject.toml && \
     PYTHON=/opt/basic/bin/python3 bash scripts/build_wheel.sh -v -c 12 -o /opt/cudaq-dist && \
     pip install --no-cache-dir /opt/cudaq-dist/cuda_quantum*.whl && \
+    cmake --install /opt/cuda-quantum/_skbuild --component Development \
+        --prefix /opt/basic/lib/python3.12/site-packages && \
+    test -f /opt/basic/lib/python3.12/site-packages/lib/cmake/nvqir/NVQIRConfig.cmake && \
     cmake -S /opt/cuda-quantum -B /opt/cuda-quantum/_skbuild \
         -U "Python*" -U "PYTHON*" \
         -DCUDAQ_DISABLE_CPP_FRONTEND=OFF \
