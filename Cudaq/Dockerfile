@@ -289,6 +289,11 @@ RUN sed -i \
     sed -i "s|-B/usr/local/llvm/bin|-B${LLVM_INSTALL_PREFIX}/bin|g" pyproject.toml.cu12 && \
     ! grep -q '/usr/local/llvm' pyproject.toml.cu12
 
+# cudaq-synth (cudaq/lib/Synthesis) needs GMP: FindGMP requires the shared libgmp.so
+# plus gmp.h. Kept as its own layer here so earlier cached layers stay valid.
+RUN apt-get update && apt-get install -y --no-install-recommends libgmp-dev && \
+    rm -rf /var/lib/apt/lists/*
+
 # Build wheel, install it, then build nvq++ toolchain from the same _skbuild, then delete
 # all build artifacts in one layer so they don't persist in the image.
 # _skbuild is ~10-15 GB; keeping creation and deletion in one RUN avoids layer bloat.
