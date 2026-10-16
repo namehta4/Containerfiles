@@ -297,8 +297,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends libgmp-dev libm
 # Build wheel, install it, then build nvq++ toolchain from the same _skbuild, then delete
 # all build artifacts in one layer so they don't persist in the image.
 # _skbuild is ~10-15 GB; keeping creation and deletion in one RUN avoids layer bloat.
+# -v: without it build_wheel.sh pipes the build through `tail -20`, hiding compiler errors.
 RUN cp pyproject.toml.cu12 pyproject.toml && \
-    PYTHON=/opt/basic/bin/python3 bash scripts/build_wheel.sh -c 12 -o /opt/cudaq-dist && \
+    PYTHON=/opt/basic/bin/python3 bash scripts/build_wheel.sh -v -c 12 -o /opt/cudaq-dist && \
     pip install --no-cache-dir /opt/cudaq-dist/cuda_quantum*.whl && \
     cmake -S /opt/cuda-quantum -B /opt/cuda-quantum/_skbuild \
         -U "Python*" -U "PYTHON*" \
