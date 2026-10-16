@@ -289,9 +289,9 @@ RUN sed -i \
     sed -i "s|-B/usr/local/llvm/bin|-B${LLVM_INSTALL_PREFIX}/bin|g" pyproject.toml.cu12 && \
     ! grep -q '/usr/local/llvm' pyproject.toml.cu12
 
-# cudaq-synth (cudaq/lib/Synthesis) needs GMP: FindGMP requires the shared libgmp.so
-# plus gmp.h. Kept as its own layer here so earlier cached layers stay valid.
-RUN apt-get update && apt-get install -y --no-install-recommends libgmp-dev && \
+# cudaq-synth (cudaq/lib/Synthesis) needs GMP and MPFR: FindGMP/FindMPFR require the
+# shared libraries plus headers. Kept as its own layer here so earlier cached layers stay valid.
+RUN apt-get update && apt-get install -y --no-install-recommends libgmp-dev libmpfr-dev && \
     rm -rf /var/lib/apt/lists/*
 
 # Build wheel, install it, then build nvq++ toolchain from the same _skbuild, then delete
