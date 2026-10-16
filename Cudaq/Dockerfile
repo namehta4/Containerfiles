@@ -105,11 +105,12 @@ ENV PYTHONPATH=/opt/basic/lib/python3.12/site-packages:$PYTHONPATH
 
 #RUN pip install cudaq-qec[tensor-network-decoder] matplotlib scipy
 
-# Install cuTensor (same version, per-arch archive: linux-x86_64 or linux-sbsa)
+# Install cuTensor (per-arch archive: linux-x86_64 or linux-sbsa). Version matches
+# cuda-quantum 0.16.0's scripts/configure_build.sh (2.2 lacks cutensorDataType_t).
 ARG CUTENSOR_INSTALL_PREFIX=/usr/local/cutensor
-ARG CUTENSOR_VERSION=2.2.0.0
+ARG CUTENSOR_VERSION=2.6.0.4
 RUN nv_arch=$(cat /tmp/nv_arch) && \
-    cutensor_archive="libcutensor-linux-${nv_arch}-${CUTENSOR_VERSION}-archive.tar.xz" && \
+    cutensor_archive="libcutensor-linux-${nv_arch}-${CUTENSOR_VERSION}_cuda12-archive.tar.xz" && \
     wget "https://developer.download.nvidia.com/compute/cutensor/redist/libcutensor/linux-${nv_arch}/${cutensor_archive}" \
     && mkdir -p "${CUTENSOR_INSTALL_PREFIX}" \
     && tar xf "${cutensor_archive}" --strip-components 1 -C "${CUTENSOR_INSTALL_PREFIX}" \
@@ -264,7 +265,8 @@ RUN if [ "$(cat /tmp/nv_arch)" = "x86_64" ]; then \
 # cuQuantum 26.01.0.4 — GPU-accelerated quantum simulation backends
 # (same version ships for both linux-x86_64 and linux-sbsa)
 ENV CUQUANTUM_INSTALL_PREFIX=/opt/nvidia/cuquantum
-RUN CUQUANTUM_VERSION=26.01.0.4 && \
+# Matches cuda-quantum 0.16.0's scripts/configure_build.sh (cuStateVec >= 1.14).
+RUN CUQUANTUM_VERSION=26.06.0.17 && \
     nv_arch=$(cat /tmp/nv_arch) && \
     cuquantum_archive=cuquantum-linux-${nv_arch}-${CUQUANTUM_VERSION}_cuda12-archive.tar.xz && \
     wget https://developer.download.nvidia.com/compute/cuquantum/redist/cuquantum/linux-${nv_arch}/${cuquantum_archive} && \
