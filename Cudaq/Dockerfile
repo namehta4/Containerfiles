@@ -46,8 +46,9 @@ RUN pip install --no-cache-dir \
     setuptools \
     pyfftw
 
-# Prefer mpi4py's prebuilt wheel index; if it is unreachable, build from PyPI
-# source against the base image's MPICH (mpicc is on PATH).
+# Prefer mpi4py's own wheel index; if it is unreachable, fall back to PyPI.
+# Neither wheel bundles MPI: both load the base image's MPICH (libmpi.so.12)
+# at runtime, so transport (ofi/cxi, ucx) is whatever MPICH selects.
 RUN pip install --no-cache-dir mpi4py -i https://pypi.anaconda.org/mpi4py/simple \
     || pip install --no-cache-dir mpi4py
 
