@@ -152,7 +152,8 @@ RUN ZLIB_VERSION=1.3.1 && \
 # LLVM (from git submodule) — main compiler infrastructure for cuda-quantum (~30-60 min build)
 ENV LLVM_INSTALL_PREFIX=/opt/llvm
 ENV PYBIND11_INSTALL_PREFIX=/usr/local/pybind11
-RUN bash scripts/build_llvm.sh -v
+# Pass -j explicitly so the LLVM ninja build uses every core on the build node.
+RUN bash scripts/build_llvm.sh -v -j $(nproc)
 
 # BLAS 3.11.0 (static) — needed for certain optimizers
 ENV BLAS_INSTALL_PREFIX=/usr/local/blas
