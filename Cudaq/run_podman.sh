@@ -29,9 +29,12 @@ export FI_PROVIDER=cxi
 
 IMAGE="docker://docker.io/nersc/cudaq:26.10"   # set to whatever tag you push
 
-# What to run inside the container. Defaults to the SC25 tutorial's Hour3
-# decoding example; point this at your own script/notebook as needed.
-RUN_CMD="python3 Hour3/mhc_qldpc_decoding.py"
+# What to run inside the container, and the directory to run it from. Defaults
+# to the SC25 tutorial's Hour3 decoding example (sbatch from the tutorial root):
+# the script opens mhc_sqale_data/ relative to cwd, so it must run in Hour3.
+# Point these at your own script/notebook as needed.
+RUN_DIR="${PWD}/Hour3"
+RUN_CMD="python3 mhc_qldpc_decoding.py"
 
 # Build --device flags from the GPUs Slurm's cgroup actually granted, rather
 # than assuming a fixed count — this stays correct even if --gpus-per-task
@@ -58,7 +61,7 @@ PODMAN_ARGS="--rm \
   -e MPIR_CVAR_CH4_NETMOD -e FI_PROVIDER \
   -e SUPPRESS_NVIDIA_HEADER \
   -e OMP_NUM_THREADS -e OMP_PROC_BIND -e OMP_PLACES \
-  -v $SCRATCH:$SCRATCH -w $PWD"
+  -v $SCRATCH:$SCRATCH -w ${RUN_DIR}"
 
 # Only the host NVIDIA driver path is genuinely runtime-unknown (the image
 # can't know it at build time); everything cudaq itself needs (cutensor,
