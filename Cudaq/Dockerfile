@@ -364,12 +364,14 @@ RUN git clone --branch 0.8.1 https://github.com/NVIDIA/cudaq-qec.git /opt/cudaqx
 
 RUN apt-get update && apt-get install -y --no-install-recommends doxygen && rm -rf /var/lib/apt/lists/*
 
+# cudaq-qec needs cuStabilizer, which ships in the cuQuantum SDK installed above.
 RUN cmake -G Ninja -S /opt/cudaqx -B /opt/cudaqx/build \
         -DCMAKE_INSTALL_PREFIX=${CUDAQX_INSTALL_PREFIX} \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_COMPILE_WARNING_AS_ERROR=OFF \
         -DCUDAQ_DIR=${CUDAQ_DIR} \
         -DLLVM_DIR=/opt/llvm/lib/cmake/llvm \
+        -DCUQUANTUM_ROOT=${CUQUANTUM_INSTALL_PREFIX} \
         -DCUDAQX_ENABLE_LIBS="qec" \
         -DCUDAQX_BINDINGS_PYTHON=ON \
         -DCUDAQX_INCLUDE_DOCS=OFF \
