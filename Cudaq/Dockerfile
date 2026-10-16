@@ -289,7 +289,10 @@ RUN sed -i \
     sed -i \
     "s/'cupy-cuda12x ~= 13.6.0;/'cupy-cuda12x >= 13.6.0;/" pyproject.toml.cu12 && \
     sed -i "s|-B/usr/local/llvm/bin|-B${LLVM_INSTALL_PREFIX}/bin|g" pyproject.toml.cu12 && \
-    ! grep -q '/usr/local/llvm' pyproject.toml.cu12
+    ! grep -q '/usr/local/llvm' pyproject.toml.cu12 && \
+    sed -i 's/^\(\s*\)auditwheel_args="$auditwheel_args --exclude libcustatevec.so.1"$/&\n\1auditwheel_args="$auditwheel_args --exclude libmpi.so.12"/' \
+        scripts/build_wheel.sh && \
+    grep -q 'exclude libmpi.so.12' scripts/build_wheel.sh
 
 # cudaq-synth (cudaq/lib/Synthesis) needs GMP and MPFR: FindGMP/FindMPFR require the
 # shared libraries plus headers. Kept as its own layer here so earlier cached layers stay valid.
@@ -358,12 +361,19 @@ RUN cmake -G Ninja -S /opt/cudaqx -B /opt/cudaqx/build \
         -DCMAKE_COMPILE_WARNING_AS_ERROR=OFF \
         -DCUDAQ_DIR=${CUDAQ_DIR} \
         -DLLVM_DIR=/opt/llvm/lib/cmake/llvm \
-        -DCUDAQX_ENABLE_LIBS="qec;solvers" \
+        -DCUDAQX_ENABLE_LIBS="qec" \
         -DCUDAQX_BINDINGS_PYTHON=ON \
         -DCUDAQX_INCLUDE_DOCS=OFF \
         -DCUDAQX_INCLUDE_TESTS=OFF && \
     ninja -C /opt/cudaqx/build install && \
     rm -rf /opt/cudaqx/build
+
+# CUDA-Q Algorithms (pure Python) supersedes CUDA-Q Solvers, which cudaq-qec 0.8.1 dropped.
+# Pinned to a main commit: the 0.1.0 release on PyPI requires cudaq<0.16. --no-deps keeps pip
+# from pulling cuda-quantum-cu12 from PyPI over the wheel built above.
+RUN pip install --no-cache-dir --no-deps \
+        "cudaq-algorithms @ git+https://github.com/NVIDIA/cudaq-algorithms@9ea0ce75b81b315c6487e6b4caead00db6460e0f" && \
+    grep -q 'def uccsd' /opt/basic/lib/python3.12/site-packages/cudaq_algorithms/stateprep/_kernels.py
 
 # libcudaq-em-default.so defines getRegisteredExecutionManager() which libcudaq-qec.so needs.
 # It gets loaded and immediately unloaded during 'import cudaq' (ref count drops to 0 when no
