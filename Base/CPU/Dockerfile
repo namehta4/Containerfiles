@@ -123,7 +123,6 @@ RUN cd hdf5                                                                 && \
           -DBUILD_TESTING:BOOL=ON -DHDF5_BUILD_TOOLS:BOOL=ON -DHDF5_BUILD_FORTRAN:BOOL=ON \
           -DHDF5_ENABLE_PARALLEL=ON -D CMAKE_INSTALL_PREFIX=/opt/hdf5/install ../ && \
     cmake --build . --config Release                                        && \
-#    ctest -C Release                                                        && \
     cpack -C Release CPackConfig.cmake                                      && \
     make -j 4                                                               && \
     make install
